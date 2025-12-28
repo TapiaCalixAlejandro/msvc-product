@@ -1,0 +1,12 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      categoryCB:
+        registerHealthIndicator: true
+        slidingWindowSize: 10          # Analiza las últimas 10 llamadas
+        minimumNumberOfCalls: 5        # Mínimo llamadas para decidir abrir
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s    # Tiempo que espera antes de intentar reconectar (Half-open)
+        failureRateThreshold: 50       # Si el 50% falla, abre el circuito
+        eventConsumerBufferSize: 10
