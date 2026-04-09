@@ -162,12 +162,12 @@ public class GlobalExceptionHandler {
     }
 
     // 500 - fallback generic
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ApiResponse> handleAll(Exception ex, WebRequest request) {
-//        log.error("Excepción no controlada (500): ", ex);
-//        // [SEGURIDAD] Al cliente le enviamos un mensaje genérico para no exponer vulnerabilidades
-//        String safeMessage = "Ocurrió un error interno inesperado. Por favor contacte al administrador.";
-//        ApiResponse api = buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", safeMessage, request.getDescription(false), null);
-//        return new ResponseEntity<>(api, HttpStatus.INTERNAL_SERVER_ERROR);
-//    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handleAll(Exception ex, WebRequest request) {
+        log.error("Excepción no controlada (500): {}", ex.getMessage());
+        // [SEGURIDAD] Al cliente le enviamos un mensaje genérico para no exponer vulnerabilidades
+        String safeMessage = "Ocurrió un error interno inesperado. Por favor contacte al administrador.";
+        ApiResponse api = buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", safeMessage, request.getDescription(false), null);
+        return new ResponseEntity<>(api, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

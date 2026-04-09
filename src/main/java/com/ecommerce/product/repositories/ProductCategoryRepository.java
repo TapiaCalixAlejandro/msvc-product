@@ -5,14 +5,15 @@ import com.ecommerce.product.models.entities.ProductCategoryId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
+import java.util.UUID;
 
-public interface ProductCategoryRepository extends JpaRepository<ProductCategory, ProductCategoryId> {
+public interface ProductCategoryRepository extends JpaRepository<ProductCategory, UUID> {
     // Metodo custom para borrar relaciones por ID del producto
+    @Transactional
     @Modifying
-    @Query("DELETE FROM ProductCategory pc WHERE pc.id.productId = :productId")
-    void deleteAllByProductId(Long productId);
+    @Query("DELETE FROM ProductCategory pc WHERE pc.product.id = :productId")
+    void deleteAllByProductId(UUID productId);
 }

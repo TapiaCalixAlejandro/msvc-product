@@ -5,36 +5,36 @@ import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @Embeddable
 public class ProductCategoryId implements Serializable {
     @Column(name = "product_id")
-    private Long productId;
-
+    private UUID productId;
     @Column(name = "category_id")
-    private Long categoryId;
+    private UUID categoryId;
 
     public ProductCategoryId() {
     }
 
-    public ProductCategoryId(Long productId, Long categoryId) {
+    public ProductCategoryId(UUID productId, UUID categoryId) {
         this.productId = productId;
         this.categoryId = categoryId;
     }
 
-    public Long getProductId() {
+    public UUID getProductId() {
         return productId;
     }
 
-    public void setProductId(Long productId) {
+    public void setProductId(UUID productId) {
         this.productId = productId;
     }
 
-    public Long getCategoryId() {
+    public UUID getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(UUID categoryId) {
         this.categoryId = categoryId;
     }
 

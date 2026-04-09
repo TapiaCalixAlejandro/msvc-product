@@ -1,7 +1,9 @@
 package com.ecommerce.product.models.dtos;
 
+import java.util.UUID;
+
 public class CategoryResponse {
-    private Long id;
+    private UUID id;
     private String name;
     private String image;
     private Boolean status;
@@ -10,7 +12,7 @@ public class CategoryResponse {
     public CategoryResponse() {
     }
 
-    public CategoryResponse(Long id, String name, String image, Boolean status, String description) {
+    public CategoryResponse(UUID id, String name, String image, Boolean status, String description) {
         this.id = id;
         this.name = name;
         this.image = image;
@@ -18,11 +20,11 @@ public class CategoryResponse {
         this.description = description;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

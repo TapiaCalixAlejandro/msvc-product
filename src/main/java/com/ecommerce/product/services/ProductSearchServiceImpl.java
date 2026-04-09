@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProductSearchServiceImpl implements ProductSearchService {
@@ -38,7 +39,7 @@ public class ProductSearchServiceImpl implements ProductSearchService {
             Boolean status,
             Double minPrice,
             Double maxPrice,
-            Long categoryId,
+            UUID categoryId,
             int page,
             int size,
             String sortBy,
@@ -61,8 +62,8 @@ public class ProductSearchServiceImpl implements ProductSearchService {
         Page<Product> products = productRepository.filterProducts(name, status, minPrice, maxPrice, categoryId, pageable);
 
         return products.map(p -> {
-            List<Long> catIds = p.getCategories().stream()
-                    .map(pc -> pc.getId().getCategoryId())
+            List<UUID> catIds = p.getCategories().stream()
+                    .map(pc -> pc.getCategoryId())
                     .toList();
             List<CategoryResponse> categories = catIds.isEmpty()
                     ? List.of()

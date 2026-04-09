@@ -15,10 +15,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
-@CrossOrigin(origins = {"http://localhost:4200"})
 @RestController
 @RequestMapping("/products")
+@CrossOrigin(origins = {"http://localhost:4200"})
 public class ProductController {
     private static final Logger log = LoggerFactory.getLogger(ProductController.class);
     private final ProductService productService;
@@ -31,11 +32,11 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> list() {
-        return ResponseEntity.ok().body(productService.listProducts());
+        return ResponseEntity.ok(productService.listProducts());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> detail(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> detail(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.findProduct(id));
     }
 
@@ -43,22 +44,19 @@ public class ProductController {
     public ResponseEntity<ProductResponse> create(
             @Valid @RequestPart("product") ProductRequest request,
             @RequestPart(value = "image", required = false) MultipartFile file) throws IOException {
-//        ProductRequest productRequest = objectMapper.readValue(request, ProductRequest.class);
-//        ProductResponse response = productService.createProduct(productRequest, file);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, file));
     }
 
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<ProductResponse> update(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestPart("product") ProductRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile file) throws IOException {
+            @RequestPart(value = "image") MultipartFile file) throws IOException {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.updateProduct(id, request, file));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
@@ -69,7 +67,7 @@ public class ProductController {
             @RequestParam(required = false) Boolean status,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) UUID categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int size,
             @RequestParam(defaultValue = "") String sortBy,

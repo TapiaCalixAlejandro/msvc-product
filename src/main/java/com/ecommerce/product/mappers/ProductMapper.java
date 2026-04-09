@@ -7,6 +7,7 @@ import com.ecommerce.product.models.entities.Product;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,17 +27,11 @@ public class ProductMapper {
         product.setStatus(request.getStatus());
         product.setImage(request.getImage());
         product.setDescription(request.getDescription());
+        // Mappear categorias
+        if (request.getCategoryIds() != null) {
+            request.getCategoryIds().forEach(product::addCategory);
+        }
 
-//        if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
-//            Set<ProductCategory> categories = new HashSet<>();
-//            for (Long categoryId : request.getCategoryIds()) {
-//                // Usamos el constructor que acepta (Product, CategoryId) para asegurar la relación bidireccional
-//                // El ID compuesto se genera internamente en ese constructor.
-//                ProductCategory pc = new ProductCategory(product, categoryId);
-//                categories.add(pc);
-//            }
-//            product.setCategories(categories);
-//        }
         return product;
     }
 
@@ -46,6 +41,9 @@ public class ProductMapper {
      */
     public ProductResponse toResponse(Product product, Collection<CategoryResponse> categories) {
         // Construir response base
+        Set<CategoryResponse> categorySet =
+                categories == null ? Collections.emptySet() : new HashSet<>(categories);
+
         ProductResponse response = new ProductResponse();
         response.setId(product.getId());
         response.setName(product.getName());
@@ -55,20 +53,8 @@ public class ProductMapper {
         response.setStatus(product.getStatus());
         response.setImage(product.getImage());
         response.setDescription(product.getDescription());
+        response.setCategories(categorySet);
 
-        if (categories != null && !categories.isEmpty()) {
-            response.setCategories(new HashSet<>(categories));
-        } else {
-            Set<CategoryResponse> fallback = product.getCategories().stream()
-                    .map(pc -> {
-                        CategoryResponse cr = new CategoryResponse();
-                        cr.setId(pc.getId().getCategoryId());
-                        cr.setName("N/A");
-                        return cr;
-                    })
-                    .collect(Collectors.toSet());
-            response.setCategories(fallback);
-        }
         return response;
     }
 }

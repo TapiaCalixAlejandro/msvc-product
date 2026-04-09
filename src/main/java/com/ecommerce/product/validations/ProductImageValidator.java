@@ -1,35 +1,45 @@
 package com.ecommerce.product.validations;
 
+import com.ecommerce.product.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
+import java.util.Collections;
 
 @Component
 public class ProductImageValidator {
     private static final Logger log = LoggerFactory.getLogger(ProductImageValidator.class);
+    private static final long MAX_SIZE = 2 * 1024 *1024;
 
-    public Optional<String> validate(MultipartFile file) {
+    public void validateCreate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            log.warn("La imagen es obligatoria para crear producto.");
-            return Optional.of("La imagen es obligatoria para crear un producto.");
+            log.error("La imagen es obligatoria al crear una categoría.");
+            throw new ValidationException(Collections.singletonList("La imagen es obligatoria al crear una categoría."));
+        }
+        validateCommomRules(file);
+    }
+
+    public void validateUpdate(MultipartFile file) {
+        if (file == null || file.isEmpty())
+            return; // el update puede no venir
+        validateCommomRules(file);
+    }
+
+    public void validateCommomRules(MultipartFile file){
+        String contentType = file.getContentType();
+        if (contentType == null ||
+                !(contentType.equalsIgnoreCase("image/jpeg") ||
+                        contentType.equalsIgnoreCase("image/jpg") ||
+                        contentType.equalsIgnoreCase("image/png"))) {
+            log.error("Solo se permiten imagenes JPEG, JPG o PNG.");
+            throw new ValidationException(Collections.singletonList("Solo se permiten imagenes JPEG, JPG o PNG."));
         }
 
-        if (file != null && !file.isEmpty()) {
-            String contentType = file.getContentType();
-            if (contentType == null || !(contentType.equalsIgnoreCase("image/png") || contentType.equalsIgnoreCase("image/jpg") ||
-                    contentType.equalsIgnoreCase("image/jpeg"))) {
-                log.warn("El producto solo acepta imagenes en formato de tipo PNG, JPG y JEPG.");
-                return Optional.of("Solo se permiten imagenes de tipo PNG, JPG y JEPG");
-            }
-
-            if (file.getSize() > 2 * 1024 * 1024) {
-                log.warn("La imagen no debe pesar más de 2MB.");
-                return Optional.of("La imagen no debe superar los 2MB");
-            }
+        if (file.getSize() > MAX_SIZE) {
+            log.error("La imagen no debe superar los 2 MB.");
+            throw new ValidationException(Collections.singletonList("La imagen no debe superar los 2 MB."));
         }
-        return Optional.empty();
     }
 }

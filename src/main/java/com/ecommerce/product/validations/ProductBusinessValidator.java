@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class ProductBusinessValidator {
     private static final Logger log = LoggerFactory.getLogger(ProductBusinessValidator.class);
@@ -25,7 +27,7 @@ public class ProductBusinessValidator {
         }
     }
 
-    public void validateUniqueNameOnUpdate(Long id, String name) {
+    public void validateUniqueNameOnUpdate(UUID id, String name) {
         productRepository.findByName(name).ifPresent(exists -> {
             if (!exists.getId().equals(id)) {
                 log.warn("La validación de unicidad de nombre falló. Nombre: '{}', ID de producto: {}", name, id);

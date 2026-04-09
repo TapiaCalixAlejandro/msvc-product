@@ -1,10 +1,10 @@
 package com.ecommerce.product.models.dtos;
 
-import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public class ProductResponse {
-    private Long id;
+    private UUID id;
     private String name;
     private Double price;
     private String sku;
@@ -17,7 +17,7 @@ public class ProductResponse {
     public ProductResponse() {
     }
 
-    public ProductResponse(Long id, String name, Double price, String sku, Integer stock, String description, Boolean status, String image, Set<CategoryResponse> categories) {
+    public ProductResponse(UUID id, String name, Double price, String sku, Integer stock, String description, Boolean status, String image, Set<CategoryResponse> categories) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -29,11 +29,11 @@ public class ProductResponse {
         this.categories = categories;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

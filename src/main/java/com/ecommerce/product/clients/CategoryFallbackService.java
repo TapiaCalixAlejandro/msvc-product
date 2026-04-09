@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -20,7 +21,7 @@ public class CategoryFallbackService {
 
     // Al estar en otro Bean, Spring sí puede interceptar esta llamada
     @CircuitBreaker(name = "categoryCB", fallbackMethod = "fallbackCategory")
-    public List<CategoryResponse> getCategoriesByIds(List<Long> ids) {
+    public List<CategoryResponse> getCategoriesByIds(List<UUID> ids) {
         return categoryClient.getCategoriesByIds(ids);
     }
 
@@ -29,7 +30,7 @@ public class CategoryFallbackService {
         log.warn("FALLBACK ACTIVADO: msvc-category caído o lento. Error: {}", ex.getMessage());
         return ids.stream().map(id -> {
             CategoryResponse cr = new CategoryResponse();
-            cr.setId(0L);
+            cr.setId(UUID.fromString("00000000-0000-0000-0000-000000000000"));
             cr.setName("N/A - Categoria no disponible");
             cr.setImage("NO-IMAGE.JPG");
             cr.setDescription("MSVC-CATEGORY Caido");

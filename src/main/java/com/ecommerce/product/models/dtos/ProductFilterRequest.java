@@ -1,8 +1,10 @@
 package com.ecommerce.product.models.dtos;
 
+import java.util.UUID;
+
 public class ProductFilterRequest {
     private String name;
-    private Long categoryId;
+    private UUID categoryId;
     private Boolean status;
     private Double minPrice;
     private Double maxPrice;
@@ -18,11 +20,11 @@ public class ProductFilterRequest {
         this.name = name;
     }
 
-    public Long getCategoryId() {
+    public UUID getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(UUID categoryId) {
         this.categoryId = categoryId;
     }
 

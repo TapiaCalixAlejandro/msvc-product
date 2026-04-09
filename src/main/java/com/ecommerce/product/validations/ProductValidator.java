@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class ProductValidator {
@@ -29,7 +30,7 @@ public class ProductValidator {
      * Validación de creación de producto
      */
     public List<CategoryResponse> validateOnCreate(ProductRequest request, MultipartFile file) {
-        productImageValidator.validate(file);
+        productImageValidator.validateCreate(file);
         productBusinessValidator.validateUniqueNameOnCreate(request.getName());
         return productCategoryValidator.validateCategoryIds(request.getCategoryIds());
     }
@@ -40,8 +41,8 @@ public class ProductValidator {
      * @param file
      * @return
      */
-    public List<CategoryResponse> validateOnUpdate(Long id, ProductRequest request, MultipartFile file) {
-        productImageValidator.validate(file);
+    public List<CategoryResponse> validateOnUpdate(UUID id, ProductRequest request, MultipartFile file) {
+        productImageValidator.validateUpdate(file);
         productBusinessValidator.validateUniqueNameOnUpdate(id, request.getName());
         return productCategoryValidator.validateCategoryIds(request.getCategoryIds());
     }

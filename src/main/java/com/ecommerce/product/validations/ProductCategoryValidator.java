@@ -9,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class ProductCategoryValidator {
@@ -23,7 +20,7 @@ public class ProductCategoryValidator {
         this.categoryClient = categoryClient;
     }
 
-    public List<CategoryResponse> validateCategoryIds(List<Long> categoryIds) {
+    public List<CategoryResponse> validateCategoryIds(List<UUID> categoryIds) {
         // Validar presencía
         if (categoryIds == null || categoryIds.isEmpty()) {
             log.warn("El producto debe tener al menos una categoría.");
@@ -31,7 +28,7 @@ public class ProductCategoryValidator {
         }
 
         // Validar duplicados antes del request remoto
-        Set<Long> unique = new HashSet<>(categoryIds);
+        Set<UUID> unique = new HashSet<>(categoryIds);
         if (unique.size() != categoryIds.size()) {
             log.warn("La lista de categorias contiene valores duplicados.");
             throw new ValidationException(Collections.singletonList("La lista de categorias contiene valores duplicados."));

@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.validation.constraints.*;
 
 import java.util.List;
+import java.util.UUID;
 
 public class ProductRequest {
     @NotBlank(message = "El nombre del producto es obligatorio.")
@@ -22,7 +23,7 @@ public class ProductRequest {
     private String description;
     private String image;
     @NotEmpty(message = "Debe asociarse al menos una categoría al producto.")
-    private List<@NotNull(message = "El ID de la categoría no puede ser nulo.")Long> categoryIds;
+    private List<@NotNull(message = "El ID de la categoría no puede ser nulo.") UUID> categoryIds;
 
     public String getName() {
         return name;
@@ -80,11 +81,11 @@ public class ProductRequest {
         this.image = image;
     }
 
-    public List<Long> getCategoryIds() {
+    public List<UUID> getCategoryIds() {
         return categoryIds;
     }
 
-    public void setCategoryIds(List<Long> categoryIds) {
+    public void setCategoryIds(List<UUID> categoryIds) {
         this.categoryIds = categoryIds;
     }
 }

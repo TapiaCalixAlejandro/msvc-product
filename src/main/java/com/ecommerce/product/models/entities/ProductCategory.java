@@ -3,39 +3,37 @@ package com.ecommerce.product.models.entities;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "product_categories")
+@Table(name = "product_categories", uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
 public class ProductCategory {
     // ID embebido para clave compuesta (product_id, category_id)
-    @EmbeddedId
-    private ProductCategoryId id;
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     //  Relación con producto
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("productId") // Vincula parte de la clave compuesta con la entidad Product
     @JoinColumn(name = "product_id")
     private Product product; // <— este es el lado dueño en la relación inversa
-
-    // Solo guardamos el ID de la categoría, ya que la entidad "Category" vive en otro microservicio
-    // El campo 'categoryId' ya es parte de la clave compuesta (ProductCategoryId)
-
+    @Column(name = "category_id", nullable = false)
+    private UUID categoryId;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public ProductCategory() {
     }
 
-    public ProductCategory(Product product, Long categoryId) {
-        this.id = new ProductCategoryId(product.getId(), categoryId);
+    public ProductCategory(Product product, UUID categoryId) {
         this.product = product;
+        this.categoryId = categoryId;
     }
 
-    public ProductCategoryId getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(ProductCategoryId id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -47,6 +45,14 @@ public class ProductCategory {
         this.product = product;
     }
 
+    public UUID getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(UUID categoryId) {
+        this.categoryId = categoryId;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -55,17 +61,9 @@ public class ProductCategory {
         this.createdAt = createdAt;
     }
 
-
     /* Se ejecuta antes de guardar */
     @PrePersist
     void onCreate() {
         this.createdAt = LocalDateTime.now();
-        //this.updatedAt = LocalDateTime.now();
-    }
-
-    /* Se ejecuta antes de actualizar */
-    @PreUpdate
-    void onUpdate() {
-        //this.updatedAt = LocalDateTime.now();
     }
 }

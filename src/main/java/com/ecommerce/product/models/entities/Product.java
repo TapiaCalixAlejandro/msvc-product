@@ -5,18 +5,19 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "products")
 public class Product {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     private String name;
     private double price;
     private String sku;
     private Integer stock;
-    private Boolean status = true;
+    private Boolean status;
     private String description;
     private String image;
     /*
@@ -24,17 +25,22 @@ public class Product {
     * sobre la asociación y permitir añadir metadatos en la pivote.
     * Relación de muchos a muchos a travéz de la tabla pivote.
     * */
-    @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ProductCategory> categories = new HashSet<>();
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public Product() {
     }
 
-    public Product(Long id, String name, double price, String sku, Integer stock, Boolean status, String description, String image, Set<ProductCategory> categories, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Product(UUID id, String name, double price, String sku, Integer stock, Boolean status,
+                   String description, String image, Set<ProductCategory> categories, LocalDateTime createdAt,
+                   LocalDateTime updatedAt, LocalDateTime deletedAt)
+    {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -46,14 +52,14 @@ public class Product {
         this.categories = categories;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
     }
 
-    // -- Getters y Setters --
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -137,12 +143,18 @@ public class Product {
         this.updatedAt = updatedAt;
     }
 
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
     //  Se ejecuta antes de guardar el registro en la DB
     @PrePersist
     void onCreated() {
-        if (this.status == null) {
-            this.status = true;
-        }
+        this.status = true;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -153,15 +165,15 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
 
-    //
-//    public void addCategory(Long categoryId) {
-//        ProductCategoryId pk = new ProductCategoryId(this.id, categoryId);
-//        ProductCategory relation = new ProductCategory(pk, this);
-//        this.categories.add(relation);
-//    }
-//
-//    public void removeCategory(Long categoryId) {
-//        ProductCategoryId pk = new ProductCategoryId(this.id, categoryId);
-//        this.categories.removeIf(pc -> pc.getId().equals(pk));
-//    }
+    public void addCategory(UUID categoryId) {
+        ProductCategory pc = new ProductCategory();
+        pc.setProduct(this);
+        pc.setCategoryId(categoryId);
+
+        this.categories.add(pc);
+    }
+
+    public void removeCategory(UUID categoryId) {
+        this.categories.removeIf(pc -> pc.getCategoryId().equals(categoryId));
+    }
 }

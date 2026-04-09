@@ -68,36 +68,31 @@ public class ProductServiceImpl implements ProductService {
 
         List<Product> products = productRepository.findAll();
 
-        if (products.isEmpty())
+        if (products.isEmpty()) {
             throw new ResourceNotFoundException("No hay productos registrados.");
+        }
 
-        // Mapeo de productos a DTO´s
+        Set<UUID> allCategoryIds = products
+                .stream()
+                .flatMap(p -> p.getCategories().stream())
+                        .map(pc -> pc.getCategoryId())
+                        .collect(Collectors.toSet());
+
+        Map<UUID, CategoryResponse> categoryMap = allCategoryIds.isEmpty()
+                ? Collections.emptyMap()
+                : fallbackService.getCategoriesByIds(new ArrayList<>(allCategoryIds))
+                    .stream()
+                    .collect(Collectors.toMap(CategoryResponse::getId, c -> c));
+
         return products.stream()
                 .map(product -> {
-                    // Extraer IDs de Categorias
-                    List<Long> catIds = product.getCategories().stream()
-                            .map(pc -> pc.getId().getCategoryId())
-                            .collect(Collectors.toList());
-
-                    List<CategoryResponse> categories = new ArrayList<>();
-
-                    // Llamada sincrona (Bloqueante) al msvc de categorias
-                    /*if (!catIds.isEmpty()) {
-                        try {
-                            categories = categoryClient.getCategoriesByIds(catIds);
-                        } catch (Exception e) {
-                            log.warn("FALLBACK aplicado via FallbackFactory: msvc-category no disponible");
-                            categories = categoryClient.getCategoriesByIds(catIds); // ahora sí cae al Fallback
-                        }
-                    }*/
-                    // SIMPLIFICADO: Feign automáticamente usará el Fallback si msvc-category está caído
-                    if (!catIds.isEmpty()) {
-                        // Esta llamada usará automáticamente el Fallback si el servicio está caído
-                        categories = fallbackService.getCategoriesByIds(catIds);
-                        //categories = categoryClient.getCategoriesByIds(catIds);
-                    }
+                    List<CategoryResponse> categories = product.getCategories().stream()
+                            .map(pc -> categoryMap.get(pc.getCategoryId()))
+                            .filter(Objects::nonNull)
+                            .toList();
                     return productMapper.toResponse(product, categories);
-                }).collect(Collectors.toList());
+                })
+                .toList();
     }
 
     @Transactional
@@ -105,47 +100,32 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse createProduct(ProductRequest request, MultipartFile file) {
         log.info("Iniciando la creación de un nuevo producto.");
 
-        // Validación de negocio
-//        if (productRepository.existsByName(request.getName())) {
-//            log.error("Ya existe un producto con el nombre {}", request.getName());
-//            throw new BusinessException("Ya existe un producto con el nombre: " + request.getName());
-//        }
         List<CategoryResponse> categories = productValidator.validateOnCreate(request, file);
 
         /* Convertir DTO en Entidad */
         Product product = productMapper.toEntity(request);
-        product.setCategories(new HashSet<>());
         Product saveProduct = productRepository.save(product);
 
         //  Si hay una imagen la guardamos en el sistema de archivos
         if (file != null && !file.isEmpty()) {
             try {
                 String fileName = handleImageUpload(file, null, saveProduct.getId());
-                product.setImage(fileName);
+                saveProduct.setImage(fileName); // 🔥 clave
                 productRepository.save(saveProduct);
-                log.info("Imagen guardada correctamente para el producto: {}", saveProduct.getName());
+                log.info("Imagen guardada correctamente para el producto: {}", product.getName());
             } catch (Exception ex) {
-                log.error("Error al guardar la imagen del producto {}:{}", saveProduct.getName(), ex.getMessage());
+                log.error("Error al guardar la imagen del producto {}:{}", product.getName(), ex.getMessage());
                 throw new BusinessException("Error al guardar la imagen." + ex.getMessage(), ex);
             }
         }
-
+        product = productRepository.save(product);
         log.info("Asignar categorias al producto: {}", request.getName());
         /* Asignar categorias */
-        assignCategories(saveProduct, request.getCategoryIds());
+        assignCategories(product, request.getCategoryIds());
         log.info("Categorias asignadas correctamente.");
 
-        // Obtener categorías remotas para el response
-        /*List<CategoryResponse> categories;
-        try {
-            categories = categoryClient.getCategoriesByIds(request.getCategoryIds()).collectList().block();
-        } catch (Exception ex) {
-            log.error("Error al consultar servicio de categorias.");
-            throw new ExternalServiceException("Error al consultar servicio de categorias.", ex);
-        }*/
-
-        log.info("Producto {} creado con exito", saveProduct.getName());
-        return productMapper.toResponse(saveProduct, categories);
+        log.info("Producto {} creado con exito", product.getName());
+        return productMapper.toResponse(product, categories);
     }
 
     /**
@@ -153,7 +133,7 @@ public class ProductServiceImpl implements ProductService {
      */
     @Transactional(readOnly = true)
     @Override
-    public ProductResponse findProduct(Long id) {
+    public ProductResponse findProduct(UUID id) {
         log.info("Buscando producto reactivamente por ID: {}", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> {
@@ -161,26 +141,20 @@ public class ProductServiceImpl implements ProductService {
                     return new ResourceNotFoundException("Producto no encontrado, ID:" +id);
                 });
 
-        List<Long> catIds = product.getCategories().stream()
-                .map(pc -> pc.getId().getCategoryId())
-                .collect(Collectors.toList());
+        List<UUID> catIds = product.getCategories().stream()
+                .map(pc -> pc.getCategoryId())
+                .toList();
 
-        List<CategoryResponse> categories = new ArrayList<>();
+        List<CategoryResponse> categories = catIds.isEmpty()
+                ? List.of()
+                : fallbackService.getCategoriesByIds(catIds);
 
-        if (!catIds.isEmpty()) {
-//            try {
-//                categories = categoryClient.getCategoriesByIds(catIds);
-//            } catch (Exception e) {
-//                throw new ExternalServiceException("Error al consultar categorias.", e);
-//            }
-            categories = fallbackService.getCategoriesByIds(catIds);
-        }
         return productMapper.toResponse(product, categories);
     }
 
     @Transactional
     @Override
-    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile file) {
+    public ProductResponse updateProduct(UUID id, ProductRequest request, MultipartFile file) {
         log.info("Iniciando el proceso de modificación del producto: {}", request.getName());
         Product exists = productRepository.findById(id)
                 .orElseThrow(() -> {
@@ -219,24 +193,13 @@ public class ProductServiceImpl implements ProductService {
         /* Reutilizar el metodo para validar categorias */
         assignCategories(update, request.getCategoryIds());
 
-        /*List<CategoryResponse> categories;
-        try {
-            categories = categoryClient
-                    .getCategoriesByIds(request.getCategoryIds())
-                    .collectList()
-                    .block();
-        } catch (Exception e) {
-            log.error("Error al consultar servicio de categorias.");
-            throw new ExternalServiceException("Error al consultar servicio de categorias.", e);
-        }*/
-
         log.info("El producto {} fue modificado con éxito.", exists.getName());
         return productMapper.toResponse(update, categories);
     }
 
     @Transactional
     @Override
-    public void deleteProduct(Long id) {
+    public void deleteProduct(UUID id) {
         log.info("Iniciando proceso de eliminación.");
         if (!productRepository.existsById(id)) {
             log.error("No se encontró un producto con ID: {}", id);
@@ -246,7 +209,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /* Metodo reutilizable para manejar la logica de la imagen (Creacion y modificacion) */
-    private String handleImageUpload(MultipartFile file, String oldImageName, Long id) throws IOException {
+    private String handleImageUpload(MultipartFile file, String oldImageName, UUID id) throws IOException {
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
@@ -254,9 +217,9 @@ public class ProductServiceImpl implements ProductService {
         }
         // Eliminar imagen anterior si existe
         if (oldImageName != null) {
-            Path oldImagePath = uploadPath.resolve(Paths.get(oldImageName).getFileName().toString());
-            Files.deleteIfExists(oldImagePath);
-            log.debug("Imagen anterior eliminada: {}", oldImagePath);
+            //Path oldImagePath = uploadPath.resolve(Paths.get(oldImageName).getFileName().toString());
+            Files.deleteIfExists(uploadPath.resolve(oldImageName));
+            log.debug("Imagen anterior eliminada: {}", oldImageName);
         }
         //  Guardar nueva imagen
         String filename = "product_" + id + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
@@ -268,12 +231,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /* Metodo centralizado para asignar categorias a productos */
-    private void assignCategories(Product product, List<Long> categoryIds) {
+    private void assignCategories(Product product, List<UUID> categoryIds) {
         pcRepository.deleteAllByProductId(product.getId());
-        Set<ProductCategory> relations = new HashSet<>();
-        for (Long catId : categoryIds) {
-            relations.add(new ProductCategory(product, catId));
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            product.setCategories(Collections.emptySet());
+            return;
         }
+
+        Set<ProductCategory> relations = categoryIds.stream()
+                .map(catId -> new ProductCategory(product, catId))
+                .collect(Collectors.toSet());
+
         pcRepository.saveAll(relations);
         product.setCategories(relations);
     }
